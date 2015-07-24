@@ -214,4 +214,33 @@ public abstract class LocationManager {
     public boolean isGPSEnabled(){
         throw new RuntimeException("GPS Detection is not supported");
     }
+    
+    /**
+     * Enables background monitoring of significant location changes.
+     * @see BackgroundLocationCallback
+     */
+    public void startMonitoringBackgroundChanges() {
+        throw new RuntimeException("Monitoring background location changes not supported");
+    }
+    
+    /**
+     * Disables background monitoring of significant location changes.
+     */
+    public void stopMonitoringBackgroundChanges() {
+        throw new RuntimeException("Monitoring background location changes not supported");
+    }
+    
+    public boolean isMonitoringBackgroundChanges() {
+        return false;
+    }
+    
+    /**
+     * Indicates whether this platform supports monitoring location changes
+     * in the background.
+     * @return True if the current platform supports monitoring location changes
+     * in the background.
+     */
+    public boolean isMonitoringBackgroundChangesSupported() {
+        return false;
+    }
 }

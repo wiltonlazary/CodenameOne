@@ -534,4 +534,7 @@ public final class IOSNative {
 
     public native void inviteFriends(String appLinkUrl, String previewImageUrl);
 
+    public native void startMonitoringBackgroundChanges(long peer);
+    public native void stopMonitoringBackgroundChanges(long peer);
+
 }

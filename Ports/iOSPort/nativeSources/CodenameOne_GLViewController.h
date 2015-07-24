@@ -48,6 +48,9 @@
 #import "FBSDKAppInviteDialog.h"
 #endif
 
+//#define BACKGROUND_LOCATION_ENABLED
+#define CN1_REQUEST_LOCATION_AUTH requestWhenInUseAuthorization
+
 #define NOT_INCLUDE_ZOOZ
 #ifdef INCLUDE_ZOOZ
 #import "ZooZ.h"

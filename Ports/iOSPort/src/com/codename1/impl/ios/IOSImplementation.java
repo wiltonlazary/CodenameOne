@@ -90,6 +90,8 @@ import com.codename1.ui.plaf.Style;
 import com.codename1.util.StringUtil;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -97,6 +99,8 @@ import java.io.ByteArrayOutputStream;
  */
 public class IOSImplementation extends CodenameOneImplementation {
     public static IOSNative nativeInstance = new IOSNative();
+    
+    private static LocationListener foregroundLocationListener;
     
     private static PurchaseCallback purchaseCallback;
     private static RestoreCallback restoreCallback;
@@ -162,6 +166,7 @@ public class IOSImplementation extends CodenameOneImplementation {
         nativeInstance.initVM();
         super.postInit();
     }
+    
     
     @Override
     protected void initDefaultUserAgent() {
@@ -2157,6 +2162,7 @@ public class IOSImplementation extends CodenameOneImplementation {
         instance.softReferenceMap = new Hashtable();
     }
     
+    
     /**
      * Extracts the hard reference from the soft/weak reference given
      *
@@ -2192,6 +2198,7 @@ public class IOSImplementation extends CodenameOneImplementation {
     class Loc extends LocationManager {
         private long peer;
         private boolean locationUpdating;
+        private boolean backgroundLocationUpdating;
 
         protected void finalize() throws Throwable {
             //super.finalize();
@@ -2283,6 +2290,37 @@ public class IOSImplementation extends CodenameOneImplementation {
         public Location getLastKnownLocation() {
             return getCurrentLocation();
         }
+
+        @Override
+        public void startMonitoringBackgroundChanges() {
+            if (getBackgroundLocationListener() != null) {
+                nativeInstance.startMonitoringBackgroundChanges(peer);
+                backgroundLocationUpdating = true;
+            } else {
+                throw new RuntimeException("Cannot monitor background changes because no background location listener is registered. ");
+            }
+        }
+
+        @Override
+        public boolean isMonitoringBackgroundChanges() {
+            return backgroundLocationUpdating;
+        }
+
+        @Override
+        public void stopMonitoringBackgroundChanges() {
+            if (getBackgroundLocationListener() != null) {
+                nativeInstance.stopMonitoringBackgroundChanges(peer);
+                backgroundLocationUpdating = false;
+            } else {
+                throw new RuntimeException("Cannot monitor background changes because no background location listener is registered. ");
+            }
+        }
+
+        @Override
+        public boolean isMonitoringBackgroundChangesSupported() {
+            return getBackgroundLocationListener() != null;
+        }
+        
     }
     
     private static Loc lm;
@@ -5868,7 +5906,33 @@ public class IOSImplementation extends CodenameOneImplementation {
         if(instance.life != null) {
             instance.life.applicationDidEnterBackground();
         }
+        startBackgroundLocationListener();
     }
+    
+    public static void startBackgroundLocationListener() {
+        LocationListener backgroundListener = instance.getBackgroundLocationListener();
+        if (backgroundListener != null) {
+            LocationManager lm = LocationManager.getLocationManager();
+            foregroundLocationListener = ((Loc)lm).getLocationListener();
+            lm.setLocationListener(backgroundListener);
+            if (lm.isMonitoringBackgroundChanges()) {
+                lm.setLocationListener(backgroundListener);
+            } else {
+                lm.setLocationListener(null);
+            }
+        } 
+    }
+    
+    
+    public static void stopBackgroundLocationListener() {
+        LocationListener backgroundListener = instance.getBackgroundLocationListener();
+        if (backgroundListener != null) {
+            LocationManager lm = LocationManager.getLocationManager();
+            lm.setLocationListener(foregroundLocationListener);
+            foregroundLocationListener = null;
+        }
+    }
+    
     /**
      * Indicates whether the application should handle the given URL, defaults to true
      * @param url the URL to handle
@@ -5897,7 +5961,10 @@ public class IOSImplementation extends CodenameOneImplementation {
         if(instance.life != null) {
             instance.life.applicationWillEnterForeground();
         }
+        stopBackgroundLocationListener();
+        
     }
+    
     
     /**
      * Called as part of the transition from the background to the inactive state; 

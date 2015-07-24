@@ -76,6 +76,12 @@ extern UIView *editingComponent;
         com_codename1_ui_Display_setProperty___java_lang_String_java_lang_String(CN1_THREAD_GET_STATE_PASS_ARG o, key, value);
     }
     com_codename1_impl_ios_IOSImplementation_callback__(CN1_THREAD_GET_STATE_PASS_SINGLE_ARG);
+    if (launchOptions[UIApplicationLaunchOptionsLocationKey]) {
+        com_codename1_impl_ios_IOSImplementation_startBackgroundLocationListener__(CN1_THREAD_GET_STATE_PASS_SINGLE_ARG);
+    }
+    
+    
+    
 #ifdef INCLUDE_CN1_PUSH
     [[UIApplication sharedApplication] cancelAllLocalNotifications];
     [UIApplication sharedApplication].applicationIconBadgeNumber = 0;
@@ -101,6 +107,8 @@ extern UIView *editingComponent;
         com_codename1_impl_ios_IOSImplementation_pushReceived___java_lang_String_java_lang_String(CN1_THREAD_GET_STATE_PASS_ARG fromNSString(CN1_THREAD_GET_STATE_PASS_ARG alertValue), fromNSString(CN1_THREAD_GET_STATE_PASS_ARG @"2"));
     }
 #endif
+    
+    
 
     //afterDidFinishLaunchingWithOptionsMarkerEntry
     

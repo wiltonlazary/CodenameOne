@@ -2494,11 +2494,11 @@ CLLocationManager* com_codename1_impl_ios_IOSNative_createCLLocation = nil;
 JAVA_LONG com_codename1_impl_ios_IOSNative_createCLLocation__(CN1_THREAD_STATE_MULTI_ARG JAVA_OBJECT instanceObject) {
     dispatch_sync(dispatch_get_main_queue(), ^{
         com_codename1_impl_ios_IOSNative_createCLLocation = [[CLLocationManager alloc] init];
-        if ([com_codename1_impl_ios_IOSNative_createCLLocation respondsToSelector:@selector     (requestWhenInUseAuthorization)]) {
+        if ([com_codename1_impl_ios_IOSNative_createCLLocation respondsToSelector:@selector     (CN1_REQUEST_LOCATION_AUTH)]) {
 #ifdef IOS8_LOCATION_WARNING
             IOS8_LOCATION_WARNING
 #endif
-            [com_codename1_impl_ios_IOSNative_createCLLocation requestWhenInUseAuthorization];
+            [com_codename1_impl_ios_IOSNative_createCLLocation CN1_REQUEST_LOCATION_AUTH];
         }
     });
     CLLocationManager* c = com_codename1_impl_ios_IOSNative_createCLLocation;
@@ -2555,6 +2555,16 @@ JAVA_LONG com_codename1_impl_ios_IOSNative_getLocationTimeStamp___long(CN1_THREA
     CLLocation* loc = (BRIDGE_CAST CLLocation*)((void *)peer);
     NSTimeInterval t = [loc.timestamp timeIntervalSince1970];
     return (JAVA_LONG)(t * 1000.0);
+}
+
+JAVA_VOID com_codename1_impl_ios_IOSNative_startMonitoringBackgroundChanges___long(CN1_THREAD_STATE_MULTI_ARG JAVA_OBJECT instanceObject, JAVA_LONG peer) {
+    CLLocationManager* l = (BRIDGE_CAST CLLocationManager*)((void *)peer);
+    [l startMonitoringSignificantLocationChanges];
+}
+
+JAVA_VOID com_codename1_impl_ios_IOSNative_stopMonitoringBackgroundChanges___long(CN1_THREAD_STATE_MULTI_ARG JAVA_OBJECT instanceObject, JAVA_LONG peer) {
+    CLLocationManager* l = (BRIDGE_CAST CLLocationManager*)((void *)peer);
+    [l stopMonitoringSignificantLocationChanges];
 }
 
 UIPopoverController* popoverController;

@@ -39,6 +39,7 @@ import com.codename1.io.Util;
 import com.codename1.io.tar.TarEntry;
 import com.codename1.io.tar.TarInputStream;
 import com.codename1.l10n.L10NManager;
+import com.codename1.location.LocationListener;
 import com.codename1.location.LocationManager;
 import com.codename1.media.Media;
 import com.codename1.messaging.Message;
@@ -94,6 +95,8 @@ public abstract class CodenameOneImplementation {
     private Hashtable linearGradientCache;
     private Hashtable radialGradientCache;
 
+    private LocationListener backgroundLocationListener;
+    
     private boolean builtinSoundEnabled = true;
     private boolean dragStarted = false;
     private int dragActivationCounter = 0;
@@ -173,6 +176,26 @@ public abstract class CodenameOneImplementation {
      */ 
     public boolean isInitialized(){
         return initiailized;
+    }
+    
+    public void setBackgroundLocationListenerClass(Class cls) {
+        try {
+            backgroundLocationListener = (LocationListener)cls.newInstance();
+        } catch (Exception ex) {
+            Log.e(ex);
+        }
+    }
+    
+    public LocationListener getBackgroundLocationListener() {
+        if (backgroundLocationListener == null && Display.getInstance().getProperty("location.backgroundListener", null) != null) {
+            try {
+                backgroundLocationListener = (LocationListener)Class.forName(Display.getInstance().getProperty("location.backgroundListener", null)).newInstance();
+        
+            } catch (Exception ex) {
+                Log.e(ex);
+            }
+        }
+        return backgroundLocationListener;
     }
     
     /**
