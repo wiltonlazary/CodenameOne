@@ -90,8 +90,6 @@ import com.codename1.ui.plaf.Style;
 import com.codename1.util.StringUtil;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
