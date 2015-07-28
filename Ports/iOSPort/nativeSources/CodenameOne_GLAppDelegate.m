@@ -80,10 +80,15 @@ extern UIView *editingComponent;
         com_codename1_impl_ios_IOSImplementation_startBackgroundLocationListener__(CN1_THREAD_GET_STATE_PASS_SINGLE_ARG);
     }
     
-    
+    if (launchOptions[UIApplicationLaunchOptionsLocalNotificationKey]) {
+        NSLog(@"Background notification received");
+        UILocalNotification *notification = launchOptions[UIApplicationLaunchOptionsLocalNotificationKey];
+        com_codename1_impl_ios_IOSImplementation_localNotificationReceived___java_lang_String(CN1_THREAD_GET_STATE_PASS_ARG fromNSString(CN1_THREAD_GET_STATE_PASS_ARG [notification.userInfo valueForKey:@"__ios_id__"]));
+        application.applicationIconBadgeNumber = 0;
+    }
     
 #ifdef INCLUDE_CN1_PUSH
-    [[UIApplication sharedApplication] cancelAllLocalNotifications];
+    //[[UIApplication sharedApplication] cancelAllLocalNotifications]; // <-- WHY IS THIS HERE? -- removing it for now
     [UIApplication sharedApplication].applicationIconBadgeNumber = 0;
     NSDictionary* userInfo = [launchOptions valueForKey:@"UIApplicationLaunchOptionsRemoteNotificationKey"];
     if(userInfo == nil) {
@@ -277,6 +282,15 @@ extern UIView *editingComponent;
     {
         NSString* alertValue = [userInfo valueForKey:@"meta"];
         com_codename1_impl_ios_IOSImplementation_pushReceived___java_lang_String_java_lang_String(CN1_THREAD_GET_STATE_PASS_ARG fromNSString(CN1_THREAD_GET_STATE_PASS_ARG alertValue), fromNSString(CN1_THREAD_GET_STATE_PASS_ARG @"2"));
+    }
+}
+
+- (void)application:(UIApplication*)application didReceiveLocalNotification:(UILocalNotification*)notification {
+    NSLog(@"Received local notification while running: %@", notification);
+    if( [notification.userInfo valueForKey:@"__ios_id__"] != NULL)
+    {
+        NSString* alertValue = [notification.userInfo valueForKey:@"__ios_id__"];
+        com_codename1_impl_ios_IOSImplementation_localNotificationReceived___java_lang_String(CN1_THREAD_GET_STATE_PASS_ARG fromNSString(CN1_THREAD_GET_STATE_PASS_ARG alertValue));
     }
 }
 #endif

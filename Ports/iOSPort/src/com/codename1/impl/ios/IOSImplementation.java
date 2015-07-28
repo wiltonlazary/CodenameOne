@@ -78,6 +78,8 @@ import com.codename1.io.Cookie;
 import com.codename1.io.Log;
 import com.codename1.io.Preferences;
 import com.codename1.media.MediaManager;
+import com.codename1.notifications.LocalNotification;
+import com.codename1.notifications.LocalNotificationCallback;
 import com.codename1.payment.RestoreCallback;
 import com.codename1.ui.Container;
 import com.codename1.ui.Dialog;
@@ -5625,6 +5627,33 @@ public class IOSImplementation extends CodenameOneImplementation {
         pushCallback = callback;
     }
     
+    public static void localNotificationReceived(final String notificationId) {
+        if (localNotificationCallback != null) {
+            Display.getInstance().callSerially(new Runnable() {
+
+                @Override
+                public void run() {
+                    if (getLocalNotificationCallback() != null) {
+                        getLocalNotificationCallback().localNotificationReceived(iosMode);
+                    }
+                }
+            });
+        } else { // could be a race condition against the native code... Retry in 2 seconds
+            new Thread() {
+                public void run() {
+                    try {
+                        Thread.sleep(1500);
+                    } catch (InterruptedException ex) {
+                    }
+                    // prevent infinite loop
+                    if(pushCallback != null) {
+                        localNotificationReceived(notificationId);
+                    }
+                }
+            }.start();
+        }
+    }
+    
     public static void setMainClass(Object main) {
         if(main instanceof PushCallback) {
             pushCallback = (PushCallback)main;
@@ -5634,6 +5663,9 @@ public class IOSImplementation extends CodenameOneImplementation {
         }
         if(main instanceof RestoreCallback) {
             restoreCallback = (RestoreCallback)main;
+        }
+        if (main instanceof LocalNotificationCallback) {
+            setLocalNotificationCallback((LocalNotificationCallback) main);
         }
     }        
     
@@ -6435,7 +6467,49 @@ public class IOSImplementation extends CodenameOneImplementation {
     public void splitString(String source, char separator, ArrayList<String> out) {
         nativeInstance.splitString(source, separator, out);
     }
-   
+
+    /**
+     * @inheritDoc
+     */
+    @Override
+    public void sendLocalNotification(LocalNotification n) {
+        
+        nativeInstance.sendLocalNotification(
+                n.getId(),
+                n.getAlertTitle(),
+                n.getAlertBody(),
+                n.getAlertLaunchImage(),
+                n.getAlertSound(),
+                n.getBadgeNumber(),
+                n.getFireDate(),
+                n.getRepeatType()
+        );
+    }
+
+    /**
+     * @inheritDoc
+     */
+    @Override
+    public void cancelLocalNotification(String id) {
+        nativeInstance.cancelLocalNotification(id);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    @Override
+    public void cancelAllLocalNotifications() {
+        nativeInstance.cancelAllLocalNotifications();
+    }
+
+    /**
+     * @inheritDoc
+     */
+    @Override
+    public int getLocalNotificationSupport() {
+        return Display.NOTIFICATION_SUPPORT_BACKGROUND | Display.NOTIFICATION_SUPPORT_FOREGROUND;
+    }
+    
 }
 
 

@@ -43,6 +43,8 @@ import com.codename1.location.LocationListener;
 import com.codename1.location.LocationManager;
 import com.codename1.media.Media;
 import com.codename1.messaging.Message;
+import com.codename1.notifications.LocalNotification;
+import com.codename1.notifications.LocalNotificationCallback;
 import com.codename1.payment.Purchase;
 import com.codename1.payment.PurchaseCallback;
 import com.codename1.push.PushCallback;
@@ -56,6 +58,7 @@ import com.codename1.ui.geom.Rectangle;
 import com.codename1.ui.geom.Shape;
 import com.codename1.ui.layouts.BorderLayout;
 import com.codename1.ui.util.ImageIO;
+import com.codename1.ui.util.WeakHashMap;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -66,6 +69,7 @@ import java.io.Reader;
 import java.io.Writer;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Date;
 
 import java.util.Enumeration;
 import java.util.Hashtable;
@@ -96,6 +100,7 @@ public abstract class CodenameOneImplementation {
     private Hashtable radialGradientCache;
 
     private LocationListener backgroundLocationListener;
+    protected static LocalNotificationCallback localNotificationCallback;
     
     private boolean builtinSoundEnabled = true;
     private boolean dragStarted = false;
@@ -171,6 +176,14 @@ public abstract class CodenameOneImplementation {
         initiailized = true;
     }
     
+    public static void setLocalNotificationCallback(LocalNotificationCallback callback) {
+        localNotificationCallback = callback;
+    }
+    
+    public static LocalNotificationCallback getLocalNotificationCallback() {
+        return localNotificationCallback;
+    }
+    
     /**
      * Returns true if the implementation is initialized.
      */ 
@@ -178,6 +191,12 @@ public abstract class CodenameOneImplementation {
         return initiailized;
     }
     
+    /**
+     * Sets the class that is used to listener for location changes when the 
+     * app enters the background.
+     * @param cls The class (which should implement LocationListener) and must have
+     * a no-arg public constructor.
+     */
     public void setBackgroundLocationListenerClass(Class cls) {
         try {
             backgroundLocationListener = (LocationListener)cls.newInstance();
@@ -186,6 +205,13 @@ public abstract class CodenameOneImplementation {
         }
     }
     
+    /**
+     * Gets the LocationListener that is registered to listen for location changes
+     * when the app is running in the background.  This listener is automatically
+     * enabled by the lifecycle class when the app enters the background,. and is
+     * disabled when the app enters the foreground.
+     * @return The LocationListener object.
+     */
     public LocationListener getBackgroundLocationListener() {
         if (backgroundLocationListener == null && Display.getInstance().getProperty("location.backgroundListener", null) != null) {
             try {
@@ -5279,6 +5305,100 @@ public abstract class CodenameOneImplementation {
     
     // END TRANSFORMATION METHODS--------------------------------------------------------------------
     
+    // BEGIN LOCAL NOTIFICATION SUPPORT
+    private WeakHashMap<String, Timer> notificationTimers;
+    private WeakHashMap<String, Timer> notificationTimers() {
+        if (notificationTimers == null) {
+            notificationTimers = new WeakHashMap<String,Timer>();
+        }
+        return notificationTimers;
+    }
+    
+    private void pruneNotificationTimers() {
+        for (String key : notificationTimers().keySet()) {
+            Timer v = notificationTimers.get(key);
+            if (v == null) {
+                notificationTimers.remove(key);
+            }
+        }
+    }
+    
+    public void sendLocalNotification(LocalNotification n) {
+        final String notificationId = n.getId();
+        Timer timer = new Timer();
+        
+        TimerTask task = new TimerTask() {
+
+            @Override
+            public void run() {
+                if (localNotificationCallback != null) {
+                    Display.getInstance().callSerially(new Runnable() {
+
+                        public void run() {
+                            localNotificationCallback.localNotificationReceived(notificationId);
+                        }
+                       
+                    });
+                }
+            }
+            
+        };
+        pruneNotificationTimers();
+        notificationTimers().put(notificationId, timer);
+        Date date = new Date(n.getFireDate()+20);
+        switch (n.getRepeatType()) {
+            case LocalNotification.REPEAT_NONE:
+                timer.schedule(task, date);
+                break;
+            case LocalNotification.REPEAT_SECOND:
+                timer.schedule(task, date, 1000);
+                break;
+            case LocalNotification.REPEAT_MINUTE:
+                timer.schedule(task, date, 1000 * 60);
+                break;
+            case LocalNotification.REPEAT_HOUR:
+                timer.schedule(task, date, 1000 * 60 *60);
+                break;
+            case LocalNotification.REPEAT_DAY:
+                timer.schedule(task, date, 1000 * 60 * 60 * 24);
+                break;
+            case LocalNotification.REPEAT_WEEK:
+                timer.schedule(task, date, 1000 * 60 * 60 * 24 * 7);
+                break;
+            default:
+                throw new RuntimeException("Unsupported repeat type: "+n.getRepeatType());
+        }
+        
+    }
+
+    public void cancelLocalNotification(String id) {
+        Timer t = notificationTimers().get(id);
+        if (t != null) {
+            t.cancel();
+        }
+        notificationTimers().remove(id);
+        pruneNotificationTimers();
+    }
+
+    public void cancelAllLocalNotifications() {
+        for (String key : notificationTimers().keySet()) {
+            Timer v = notificationTimers.get(key);
+            if (v != null) {
+                v.cancel();
+            }
+            notificationTimers.remove(key);
+        }
+    }
+
+    /**
+     * Returns the level of support on this platform for local notifications.
+     * @return Either {@link Display#NOTIFICATION_SUPPORT_BACKGROUND}, {@link Display#NOTIFICATION_SUPPORT_FOREGROUND},
+     * the bitwise "OR" of these two values, or 0 to indicate that there is no support.
+     */
+    public int getLocalNotificationSupport() {
+        return Display.NOTIFICATION_SUPPORT_FOREGROUND;
+    }
+    // END LOCAL NOTIFICATION SUPPORT
     
     class RPush implements Runnable {
         public void run() {

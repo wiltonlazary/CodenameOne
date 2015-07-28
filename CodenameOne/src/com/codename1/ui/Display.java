@@ -42,6 +42,7 @@ import com.codename1.io.ConnectionRequest;
 import com.codename1.io.Preferences;
 import com.codename1.l10n.L10NManager;
 import com.codename1.media.Media;
+import com.codename1.notifications.LocalNotification;
 import com.codename1.payment.Purchase;
 import com.codename1.system.CrashReport;
 import com.codename1.ui.geom.Rectangle;
@@ -251,6 +252,18 @@ public final class Display {
      * Strings native picker type, it returns a String result and accepts a String array.
      */
     public static final int PICKER_TYPE_STRINGS = 4;
+    
+    /**
+     * Constant returned from {@link #getLocalNotificationSupport()} method
+     * to indicate that background notifications are supported.
+     */
+    public static final int NOTIFICATION_SUPPORT_BACKGROUND = 1;
+    
+    /**
+     * Constant returned from {@link #getLocalNotificationSupport()} method
+     * to indicate that foreground notifications are supported.
+     */
+    public static final int NOTIFICATION_SUPPORT_FOREGROUND = 2;
 
     /**
      * A pure touch device has no focus showing when the user is using the touch
@@ -3708,5 +3721,26 @@ public final class Display {
      */
     public void setMultiKeyMode(boolean multiKeyMode) {
         this.multiKeyMode = multiKeyMode;
+    }
+    
+    
+    public void sendLocalNotification(LocalNotification n) {
+        impl.sendLocalNotification(n);
+    }
+    
+    public void cancelLocalNotification(String notificationId) {
+        impl.cancelLocalNotification(notificationId);
+    }
+    
+    public void cancelAllLocalNotifications() {
+        impl.cancelAllLocalNotifications();
+    }
+    /**
+     * Returns the level of support on this platform for local notifications.
+     * @return Either {@link #NOTIFICATION_SUPPORT_BACKGROUND}, {@link #NOTIFICATION_SUPPORT_FOREGROUND},
+     * the bitwise "OR" of these two values, or 0 to indicate that there is no support.
+     */
+    public int getLocalNotificationSuport() {
+        return impl.getLocalNotificationSupport();
     }
 }

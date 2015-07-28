@@ -23,6 +23,7 @@
 package com.codename1.impl.javase;
 
 import com.codename1.impl.CodenameOneImplementation;
+import com.codename1.notifications.LocalNotificationCallback;
 import com.codename1.payment.PurchaseCallback;
 import com.codename1.push.PushCallback;
 import com.codename1.ui.Display;
@@ -66,6 +67,9 @@ public class Executor {
                             }
                             if(app instanceof PurchaseCallback) {
                                 CodenameOneImplementation.setPurchaseCallback((PurchaseCallback)app);
+                            }
+                            if(app instanceof LocalNotificationCallback) {
+                                CodenameOneImplementation.setLocalNotificationCallback((LocalNotificationCallback)app);
                             }
                             Display.init(null);
                             Display.getInstance().callSerially(new Runnable() {

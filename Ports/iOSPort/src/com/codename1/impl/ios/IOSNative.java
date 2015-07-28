@@ -24,11 +24,11 @@ package com.codename1.impl.ios;
 
 import com.codename1.contacts.Contact;
 import com.codename1.payment.Product;
-import com.codename1.social.GoogleImpl;
 import com.codename1.social.LoginCallback;
 import com.codename1.ui.geom.Rectangle;
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.Vector;
 
 /**
@@ -536,5 +536,11 @@ public final class IOSNative {
 
     public native void startMonitoringBackgroundChanges(long peer);
     public native void stopMonitoringBackgroundChanges(long peer);
+
+    native void sendLocalNotification(String id, String alertTitle, String alertBody, String alertLaunchImage, String alertSound, int badgeNumber, long fireDate, int repeatType);
+
+    native void cancelLocalNotification(String id);
+
+    native void cancelAllLocalNotifications();
 
 }
