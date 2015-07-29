@@ -6332,17 +6332,21 @@ JAVA_INT com_codename1_impl_ios_IOSNative_readNSFile___long(CN1_THREAD_STATE_MUL
 #endif
 
 
+
 JAVA_VOID com_codename1_impl_ios_IOSNative_sendLocalNotification___java_lang_String_java_lang_String_java_lang_String_java_lang_String_java_lang_String_int_long_int( CN1_THREAD_STATE_MULTI_ARG
-                                                                                                                                                                     JAVA_OBJECT me, JAVA_OBJECT notificationId, JAVA_OBJECT alertTitle, JAVA_OBJECT alertBody, JAVA_OBJECT alertLaunchImage, JAVA_OBJECT alertSound, JAVA_INT badgeNumber, JAVA_LONG fireDate, JAVA_INT repeatType
+    JAVA_OBJECT me, JAVA_OBJECT notificationId, JAVA_OBJECT alertTitle, JAVA_OBJECT alertBody, JAVA_OBJECT alertLaunchImage, JAVA_OBJECT alertSound, JAVA_INT badgeNumber, JAVA_LONG fireDate, JAVA_INT repeatType
                                                                                                                                                                      ) {
+    
     UILocalNotification *notification = [[UILocalNotification alloc] init];
     notification.alertBody = toNSString(CN1_THREAD_STATE_PASS_ARG alertBody);
-    notification.alertTitle = toNSString(CN1_THREAD_STATE_PASS_ARG alertTitle);
+    if ([notification respondsToSelector:@selector(alertTitle)]) {
+        notification.alertTitle = toNSString(CN1_THREAD_STATE_PASS_ARG alertTitle);
+    }
     notification.alertLaunchImage = toNSString(CN1_THREAD_STATE_PASS_ARG alertLaunchImage);
     notification.soundName= toNSString(CN1_THREAD_STATE_PASS_ARG alertSound);
-    notification.fireDate = [NSDate dateWithTimeIntervalSince1970: fireDate/1000 + 5];
-    //notification.fireDate = [[NSDate date] addTimeInterval:10];
+    notification.fireDate = [NSDate dateWithTimeIntervalSince1970: fireDate/1000 + 1];
     notification.timeZone = [NSTimeZone defaultTimeZone];
+    
     switch (repeatType) {
         case 0:
             notification.repeatInterval = nil;
@@ -6376,14 +6380,15 @@ JAVA_VOID com_codename1_impl_ios_IOSNative_sendLocalNotification___java_lang_Str
     dispatch_sync(dispatch_get_main_queue(), ^{
 #ifdef __IPHONE_8_0
         if ([UIApplication instancesRespondToSelector:@selector(registerUserNotificationSettings:)]){
-            
-            [[UIApplication sharedApplication] registerUserNotificationSettings:[UIUserNotificationSettings
-                                                                                 settingsForTypes:UIUserNotificationTypeAlert|UIUserNotificationTypeBadge|
-                                                                                 UIUserNotificationTypeSound categories:nil]];
+            [[UIApplication sharedApplication] registerUserNotificationSettings:[UIUserNotificationSettings settingsForTypes:UIUserNotificationTypeAlert|UIUserNotificationTypeBadge|UIUserNotificationTypeSound categories:nil]];
+            //[[UIApplication sharedApplication] registerUserNotificationSettings:[UIUserNotificationSettings
+            //                                             settingsForTypes:UIUserNotificationTypeAlert|UIUserNotificationTypeBadge|
+            //                                           UIUserNotificationTypeSound categories:nil]];
         }
 #endif
         
         [[UIApplication sharedApplication] scheduleLocalNotification: notification];
+        
     });
 }
 
@@ -6409,6 +6414,11 @@ JAVA_VOID com_codename1_impl_ios_IOSNative_cancelAllLocalNotifications__(CN1_THR
     });
     
 }
+
+
+
+
+
 
 
 

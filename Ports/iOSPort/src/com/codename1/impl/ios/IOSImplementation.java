@@ -5634,7 +5634,7 @@ public class IOSImplementation extends CodenameOneImplementation {
                 @Override
                 public void run() {
                     if (getLocalNotificationCallback() != null) {
-                        getLocalNotificationCallback().localNotificationReceived(iosMode);
+                        getLocalNotificationCallback().localNotificationReceived(notificationId);
                     }
                 }
             });
