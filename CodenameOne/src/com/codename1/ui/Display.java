@@ -3723,15 +3723,28 @@ public final class Display {
         this.multiKeyMode = multiKeyMode;
     }
     
-    
+    /**
+     * Schedules a local notification to occur.
+     * @param n The notification to schedule.
+     * @see com.codename1.notifications.LocalNotification
+     */
     public void sendLocalNotification(LocalNotification n) {
         impl.sendLocalNotification(n);
     }
     
+    /**
+     * Cancels a local notification by ID.
+     * @param notificationId 
+     * @see com.codename1.notifications.LocalNotification
+     */
     public void cancelLocalNotification(String notificationId) {
         impl.cancelLocalNotification(notificationId);
     }
     
+    /**
+     * Cancels all scheduled local notifications.
+     * @see com.codename1.notifications.LocalNotification
+     */
     public void cancelAllLocalNotifications() {
         impl.cancelAllLocalNotifications();
     }
