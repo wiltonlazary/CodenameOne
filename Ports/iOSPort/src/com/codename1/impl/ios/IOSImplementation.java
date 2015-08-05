@@ -2264,13 +2264,14 @@ public class IOSImplementation extends CodenameOneImplementation {
         
         @Override
         protected void bindListener() {
-            if(!locationUpdating) {
+            if(!locationUpdating && getLocationListener() != getBackgroundLocationListener()) {
                 long p = getLocation();
                 if(p <= 0) {
                     return;
                 }
                 locationUpdating = true;
                 nativeInstance.startUpdatingLocation(p);
+                
             }
         }
 
@@ -2282,6 +2283,7 @@ public class IOSImplementation extends CodenameOneImplementation {
                     return;
                 }
                 locationUpdating = false;
+                
                 nativeInstance.stopUpdatingLocation(p);
             }
         }
