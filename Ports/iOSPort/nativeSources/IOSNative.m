@@ -2492,7 +2492,10 @@ void com_codename1_impl_ios_IOSNative_showNativePlayerController___long(CN1_THRE
 
 CLLocationManager* com_codename1_impl_ios_IOSNative_createCLLocation = nil;
 JAVA_LONG com_codename1_impl_ios_IOSNative_createCLLocation__(CN1_THREAD_STATE_MULTI_ARG JAVA_OBJECT instanceObject) {
-    dispatch_sync(dispatch_get_main_queue(), ^{
+    
+    // This little hack (check for main thread) is needed to prevent deadlock when setting the background location
+    // listener in applicationDidEnterBackground.  dispatch_sync will deadlock if called on main thread.
+    if ([NSThread isMainThread]) {
         com_codename1_impl_ios_IOSNative_createCLLocation = [[CLLocationManager alloc] init];
         if ([com_codename1_impl_ios_IOSNative_createCLLocation respondsToSelector:@selector     (CN1_REQUEST_LOCATION_AUTH)]) {
 #ifdef IOS8_LOCATION_WARNING
@@ -2500,10 +2503,19 @@ JAVA_LONG com_codename1_impl_ios_IOSNative_createCLLocation__(CN1_THREAD_STATE_M
 #endif
             [com_codename1_impl_ios_IOSNative_createCLLocation CN1_REQUEST_LOCATION_AUTH];
         }
-    });
-    CLLocationManager* c = com_codename1_impl_ios_IOSNative_createCLLocation;
-    com_codename1_impl_ios_IOSNative_createCLLocation = nil;
-    return (JAVA_LONG)((BRIDGE_CAST void*)c);
+
+    } else {
+        dispatch_sync(dispatch_get_main_queue(), ^{
+            com_codename1_impl_ios_IOSNative_createCLLocation = [[CLLocationManager alloc] init];
+            if ([com_codename1_impl_ios_IOSNative_createCLLocation respondsToSelector:@selector     (CN1_REQUEST_LOCATION_AUTH)]) {
+#ifdef IOS8_LOCATION_WARNING
+                IOS8_LOCATION_WARNING
+#endif
+                [com_codename1_impl_ios_IOSNative_createCLLocation CN1_REQUEST_LOCATION_AUTH];
+            }
+        });
+    }
+
 }
 
 JAVA_LONG com_codename1_impl_ios_IOSNative_getCurrentLocationObject___long(CN1_THREAD_STATE_MULTI_ARG JAVA_OBJECT instanceObject, JAVA_LONG peer) {

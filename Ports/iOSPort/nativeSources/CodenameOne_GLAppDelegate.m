@@ -221,6 +221,9 @@ extern UIView *editingComponent;
      Use this method to release shared resources, save user data, invalidate timers, and store enough application state information to restore your application to its current state in case it is terminated later.
      If your application supports background execution, this method is called instead of applicationWillTerminate: when the user quits.
      */
+    UIBackgroundTaskIdentifier bgTaskId = [application beginBackgroundTaskWithExpirationHandler:^{
+        
+    }];
     com_codename1_impl_ios_IOSImplementation_applicationDidEnterBackground__(CN1_THREAD_GET_STATE_PASS_SINGLE_ARG);
     //----application_will_resign_active
     isAppSuspended = YES;
@@ -228,7 +231,7 @@ extern UIView *editingComponent;
     java_lang_System_stopGC__(CN1_THREAD_GET_STATE_PASS_SINGLE_ARG);
     mallocWhileSuspended = 0;
 #endif
-}
+    [application endBackgroundTask:bgTaskId];}
 
 - (void)applicationWillEnterForeground:(UIApplication *)application
 {
