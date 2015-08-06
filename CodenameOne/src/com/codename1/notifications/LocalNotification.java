@@ -109,7 +109,6 @@ public class LocalNotification {
     private long fireDate;
     private String alertBody;
     private String alertTitle;
-    private String alertLaunchImage;
     private String alertSound;
    
 
@@ -203,24 +202,7 @@ public class LocalNotification {
         this.alertTitle = alertTitle;
     }
 
-    /**
-     * Gets the launch image to be displayed for this notification.  This should refer to 
-     * an image that is bundled in the default package of the app.
-     * @return the alertLaunchImage
-     */
-    public String getAlertLaunchImage() {
-        return alertLaunchImage;
-    }
-
-    /**
-     * Gets the launch image to be displayed for this notification.  This should refer to 
-     * an image that is bundled in the default package of the app.
-     * 
-     * @param alertLaunchImage the alertLaunchImage to set
-     */
-    public void setAlertLaunchImage(String alertLaunchImage) {
-        this.alertLaunchImage = alertLaunchImage;
-    }
+    
 
     /**
      * Gets the alert sound to be sounded when the notification arrives.  This 

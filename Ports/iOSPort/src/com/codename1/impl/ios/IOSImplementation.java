@@ -6480,7 +6480,6 @@ public class IOSImplementation extends CodenameOneImplementation {
                 n.getId(),
                 n.getAlertTitle(),
                 n.getAlertBody(),
-                n.getAlertLaunchImage(),
                 n.getAlertSound(),
                 n.getBadgeNumber(),
                 n.getFireDate(),

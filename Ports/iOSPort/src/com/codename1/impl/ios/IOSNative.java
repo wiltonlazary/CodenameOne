@@ -537,7 +537,7 @@ public final class IOSNative {
     public native void startMonitoringBackgroundChanges(long peer);
     public native void stopMonitoringBackgroundChanges(long peer);
 
-    native void sendLocalNotification(String id, String alertTitle, String alertBody, String alertLaunchImage, String alertSound, int badgeNumber, long fireDate, int repeatType);
+    native void sendLocalNotification(String id, String alertTitle, String alertBody, String alertSound, int badgeNumber, long fireDate, int repeatType);
 
     native void cancelLocalNotification(String id);
 
