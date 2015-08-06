@@ -244,7 +244,7 @@ extern UIView *editingComponent;
 - (void)applicationDidBecomeActive:(UIApplication *)application
 {
 #ifdef INCLUDE_CN1_PUSH
-    [[UIApplication sharedApplication] cancelAllLocalNotifications];
+    //[[UIApplication sharedApplication] cancelAllLocalNotifications]; //<--- Not sure why this is here.  Removing because it conflicts with local notifications
     [UIApplication sharedApplication].applicationIconBadgeNumber = 0;
 #endif
     /*

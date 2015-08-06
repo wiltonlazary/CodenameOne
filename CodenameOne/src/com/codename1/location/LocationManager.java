@@ -230,6 +230,10 @@ public abstract class LocationManager {
         throw new RuntimeException("Monitoring background location changes not supported");
     }
     
+    /**
+     * Checks to see if the app is currently set to monitor background changes.
+     * @return 
+     */
     public boolean isMonitoringBackgroundChanges() {
         return false;
     }
