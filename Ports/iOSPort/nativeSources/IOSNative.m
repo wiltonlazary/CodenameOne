@@ -2515,6 +2515,9 @@ JAVA_LONG com_codename1_impl_ios_IOSNative_createCLLocation__(CN1_THREAD_STATE_M
             }
         });
     }
+    CLLocationManager* c = com_codename1_impl_ios_IOSNative_createCLLocation;
+    com_codename1_impl_ios_IOSNative_createCLLocation = nil;
+    return (JAVA_LONG)((BRIDGE_CAST void*)c);
 
 }
 
@@ -6345,8 +6348,8 @@ JAVA_INT com_codename1_impl_ios_IOSNative_readNSFile___long(CN1_THREAD_STATE_MUL
 
 
 
-JAVA_VOID com_codename1_impl_ios_IOSNative_sendLocalNotification___java_lang_String_java_lang_String_java_lang_String_java_lang_String_java_lang_String_int_long_int( CN1_THREAD_STATE_MULTI_ARG
-    JAVA_OBJECT me, JAVA_OBJECT notificationId, JAVA_OBJECT alertTitle, JAVA_OBJECT alertBody, JAVA_OBJECT alertLaunchImage, JAVA_OBJECT alertSound, JAVA_INT badgeNumber, JAVA_LONG fireDate, JAVA_INT repeatType
+JAVA_VOID com_codename1_impl_ios_IOSNative_sendLocalNotification___java_lang_String_java_lang_String_java_lang_String_java_lang_String_int_long_int( CN1_THREAD_STATE_MULTI_ARG
+    JAVA_OBJECT me, JAVA_OBJECT notificationId, JAVA_OBJECT alertTitle, JAVA_OBJECT alertBody, JAVA_OBJECT alertSound, JAVA_INT badgeNumber, JAVA_LONG fireDate, JAVA_INT repeatType
                                                                                                                                                                      ) {
     
     UILocalNotification *notification = [[UILocalNotification alloc] init];
@@ -6354,7 +6357,6 @@ JAVA_VOID com_codename1_impl_ios_IOSNative_sendLocalNotification___java_lang_Str
     if ([notification respondsToSelector:@selector(alertTitle)]) {
         notification.alertTitle = toNSString(CN1_THREAD_STATE_PASS_ARG alertTitle);
     }
-    notification.alertLaunchImage = toNSString(CN1_THREAD_STATE_PASS_ARG alertLaunchImage);
     notification.soundName= toNSString(CN1_THREAD_STATE_PASS_ARG alertSound);
     notification.fireDate = [NSDate dateWithTimeIntervalSince1970: fireDate/1000 + 1];
     notification.timeZone = [NSTimeZone defaultTimeZone];
