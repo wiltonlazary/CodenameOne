@@ -5940,6 +5940,7 @@ public class IOSImplementation extends CodenameOneImplementation {
             instance.life.applicationDidEnterBackground();
         }
         startBackgroundLocationListener();
+        instance.stopForegroundFetchTask();
     }
     
     public static void startBackgroundLocationListener() {
@@ -6071,9 +6072,22 @@ public class IOSImplementation extends CodenameOneImplementation {
             instance.life.applicationWillEnterForeground();
         }
         stopBackgroundLocationListener();
+        instance.startForegrandFetchTask();
         
     }
     
+    
+    private void startForegrandFetchTask() {
+        if (backgroundFetchTask != null) {
+            super.startBackgroundFetchServiceImpl();
+        }
+    }
+    
+    private void stopForegroundFetchTask() {
+        if ( backgroundFetchTask != null) {
+            super.stopBackgroundFetchServiceImpl();
+        }
+    }
     
     /**
      * Called as part of the transition from the background to the inactive state; 
