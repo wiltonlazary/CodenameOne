@@ -315,5 +315,32 @@ extern void repaintUI();
 }
 #endif
 
+#ifdef CN1_BACKGROUND_FETCH_ENABLED
+static void (^backgroundFetchCompletionHandler)(UIBackgroundFetchResult);
+
+//static backgroundFetchCompletionHandler currentBackgroundFetchCompletionHandler = NULL;
+
+-(void)application:(UIApplication *)application performFetchWithCompletionHandler:(void (^)(UIBackgroundFetchResult))completionHandler{
+    if (backgroundFetchCompletionHandler != NULL) {
+        completionHandler(UIBackgroundFetchResultNoData);
+        return;
+    }
+    backgroundFetchCompletionHandler = completionHandler;
+    [backgroundFetchCompletionHandler retain];
+    
+    com_codename1_impl_ios_IOSImplementation_performBackgroundFetch__(CN1_THREAD_GET_STATE_PASS_SINGLE_ARG);
+}
+
++(void)completeBackgroundFetch:(UIBackgroundFetchResult)result {
+    if (backgroundFetchCompletionHandler == NULL) {
+        return;
+    }
+    void (^callback)(UIBackgroundFetchResult) = backgroundFetchCompletionHandler;
+    backgroundFetchCompletionHandler = NULL;
+    callback(result);
+    [callback release];
+}
+#endif
+
 //GL_APP_DELEGATE_BODY
 @end

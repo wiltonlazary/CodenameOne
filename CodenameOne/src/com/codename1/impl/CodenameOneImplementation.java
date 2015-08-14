@@ -28,6 +28,7 @@ import com.codename1.components.FileTree;
 import com.codename1.components.FileTreeModel;
 import com.codename1.contacts.Contact;
 import com.codename1.db.Database;
+import com.codename1.io.BackgroundFetchTask;
 import com.codename1.io.ConnectionRequest;
 import com.codename1.io.Cookie;
 import com.codename1.io.FileSystemStorage;
@@ -101,6 +102,8 @@ public abstract class CodenameOneImplementation {
 
     private LocationListener backgroundLocationListener;
     protected static LocalNotificationCallback localNotificationCallback;
+    
+    protected BackgroundFetchTask backgroundFetchTask;
     
     private boolean builtinSoundEnabled = true;
     private boolean dragStarted = false;
@@ -184,6 +187,8 @@ public abstract class CodenameOneImplementation {
         return localNotificationCallback;
     }
     
+    
+    
     /**
      * Returns true if the implementation is initialized.
      */ 
@@ -222,6 +227,69 @@ public abstract class CodenameOneImplementation {
             }
         }
         return backgroundLocationListener;
+    }
+    
+    
+    private Timer backgroundFetchTimer = null;
+    public int getBackgroundFetchSupport() {
+        return Display.BACKGROUND_FETCH_SUPPORT_FOREGROUND;
+    }
+    
+    public void startBackgroundFetchService(BackgroundFetchTask task) {
+        if (backgroundFetchTask != null) {
+            stopBackgroundFetchService();
+            backgroundFetchTask = null;
+        }
+        
+        if (task != null) {
+            backgroundFetchTask = task;
+            startBackgroundFetchServiceImpl();
+        }
+    }
+        
+    protected void startBackgroundFetchServiceImpl() {
+        
+        
+        if (backgroundFetchTask == null) {
+            throw new RuntimeException("Attempt to start background fetch service, but no BackgroundFetchTask has been installed.");
+        }
+        
+        if (backgroundFetchTimer != null) {
+           return;
+        }
+        backgroundFetchTimer = new Timer();
+        TimerTask tt = new TimerTask() {
+
+            @Override
+            public synchronized void run() {
+                backgroundFetchTask.performFetch();
+            }
+            
+        };
+        
+        // If the interval is set to a non-positive number, then the default interval
+        // is once per hour.
+        long interval = backgroundFetchTask.getPreferredInterval() > 0 ? (backgroundFetchTask.getPreferredInterval() * 1000) : 3600 *1000;
+        
+        backgroundFetchTimer.scheduleAtFixedRate(tt, interval, interval);
+    }
+    
+    public void stopBackgroundFetchService() {
+        if (backgroundFetchTask != null) {
+            stopBackgroundFetchServiceImpl();
+        }
+        
+    }
+    
+    protected void stopBackgroundFetchServiceImpl() {
+        if (backgroundFetchTimer != null) {
+            backgroundFetchTimer.cancel();
+            backgroundFetchTimer = null;
+        }
+    }
+    
+    public boolean isBackgroundFetchServiceRunning() {
+        return backgroundFetchTimer != null;
     }
     
     /**

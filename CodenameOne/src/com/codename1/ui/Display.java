@@ -38,6 +38,7 @@ import com.codename1.impl.ImplementationFactory;
 import com.codename1.impl.CodenameOneImplementation;
 import com.codename1.impl.CodenameOneThread;
 import com.codename1.impl.VirtualKeyboardInterface;
+import com.codename1.io.BackgroundFetchTask;
 import com.codename1.io.ConnectionRequest;
 import com.codename1.io.Preferences;
 import com.codename1.l10n.L10NManager;
@@ -272,6 +273,20 @@ public final class Display {
      * is common in Android devices
      */
     private boolean pureTouch;
+    
+    /**
+     * Constant returned from {@link #getBackgroundFetchSupport() } method to indicate
+     * that background fetch is supported on this device, and that it will run even
+     * when the app is in the background.
+     */
+    public static final int BACKGROUND_FETCH_SUPPORT_BACKGROUND = 1;
+    
+    /**
+     * Constant returned from {@link #getBackgroundFetchSupport() } method to indicate
+     * that background fetch is supported on this device, but that it will run only
+     * when the app is in the foreground.
+     */
+    public static final int BACKGROUND_FETCH_SUPPORT_FOREGROUND = 2;
 
     private Graphics codenameOneGraphics;
 
@@ -3756,4 +3771,68 @@ public final class Display {
     public int getLocalNotificationSuport() {
         return impl.getLocalNotificationSupport();
     }
+    
+    /**
+     * <p>Starts running the background fetch service.  This will periodically call the 
+     * provided task at the interval specified in <code>task.getPreferredInterval()</code>.  Background
+     * fetch tasks receive special treatment on platforms that support background fetch
+     * in the background.  On iOS, a task is limited to 30 seconds, and is encouraged to 
+     * be a short as possible.  If the task is long-running, then the operating system
+     * may penalize the app by not calling the background fetch as frequently.
+     * @param task The task whose <code>performTask()</code> method will be called as
+     * some interval.</p>
+     * 
+     * <p>On iOS, you must include "fetch" in the <code>ios.background_modes</code> build hint in order
+     * for background fetching to be supported.  If you omit this, then only foreground
+     * fetches will be supported.  I.e. it behaves just like a TimerTask and only runs
+     * while the app is in the foreground.  If you include <code>ios.background_modes=fetch</code>
+     * in the build hints, though, it will use iOS's background fetch facilities.</p>
+     * 
+     * @see #stopBackgroundFetchService()
+     * @see #isBackgroundFetchServiceRunning()
+     * @see #getBackgroundFetchSupport() 
+     * 
+     */
+    public void startBackgroundFetchService(BackgroundFetchTask task) {
+        impl.startBackgroundFetchService(task);
+    }
+    
+    /**
+     * Stops the background fetch service from running.
+     * @see #startBackgroundFetchService(com.codename1.io.BackgroundFetchTask) 
+     * @see #isBackgroundFetchServiceRunning() 
+     * @see #getBackgroundFetchSupport() 
+     */
+    public void stopBackgroundFetchService() {
+        impl.stopBackgroundFetchService();
+    }
+    
+    /**
+     * Checks to see if the background fetch service is running.
+     * @return True if the background fetch service is running.
+     * @see #startBackgroundFetchService(com.codename1.io.BackgroundFetchTask) 
+     * @see #stopBackgroundFetchService() 
+     * @see #getBackgroundFetchSupport() 
+     */
+    public boolean isBackgroundFetchServiceRunning() {
+        return impl.isBackgroundFetchServiceRunning();
+    }
+    
+    /**
+     * Returns the level of support for background fetches in this application.  If this returns
+     * {@link #BACKGROUND_FETCH_SUPPORT_BACKGROUND}, that means that the device supports background
+     * fetches even when the app is in the background.  {@link #BACKGROUND_FETCH_SUPPORT_FOREGROUND} means
+     * that the platform supports background fetch, but will only run when the app is in the foreground.
+     * @return 
+     * @See {@link com.codename1.io.BackgroundFetchTask}
+     * @see #startBackgroundFetchService(com.codename1.io.BackgroundFetchTask) 
+     * @see #stopBackgroundFetchService() 
+     * @see #isBackgroundFetchServiceRunning() 
+     * 
+     */
+    public int getBackgroundFetchSupport() {
+        return impl.getBackgroundFetchSupport();
+    }
 }
+
+

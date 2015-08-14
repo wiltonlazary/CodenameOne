@@ -31,5 +31,5 @@
 @property (nonatomic, retain) IBOutlet UIWindow *window;
 
 @property (nonatomic, retain) IBOutlet CodenameOne_GLViewController *viewController;
-
++(void)completeBackgroundFetch:(UIBackgroundFetchResult)result;
 @end

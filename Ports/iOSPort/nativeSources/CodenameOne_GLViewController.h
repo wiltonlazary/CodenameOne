@@ -48,6 +48,10 @@
 #import "FBSDKAppInviteDialog.h"
 #endif
 
+//#define CN1_BACKGROUND_FETCH_ENABLED
+
+
+
 //#define BACKGROUND_LOCATION_ENABLED
 #define CN1_REQUEST_LOCATION_AUTH requestWhenInUseAuthorization
 

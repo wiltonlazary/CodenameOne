@@ -28,6 +28,7 @@ import com.codename1.contacts.Address;
 import com.codename1.contacts.Contact;
 import com.codename1.db.Database;
 import com.codename1.impl.CodenameOneImplementation;
+import com.codename1.io.BackgroundFetchTask;
 import com.codename1.location.Location;
 import com.codename1.ui.Component;
 import com.codename1.ui.Display;
@@ -5964,6 +5965,82 @@ public class IOSImplementation extends CodenameOneImplementation {
             foregroundLocationListener = null;
         }
     }
+
+
+    /**
+     * This should always return Display.BACKGROUND_FETCH_SUPPORT_BACKGROUND except
+     * when the ios.background_fetch build hint is missing or the system is older
+     * than iOS 7 (and thus doesn't support background fetch).
+     */
+    @Override
+    public int getBackgroundFetchSupport() {
+        return nativeInstance.getBackgroundFetchSupport();
+    }
+
+    // Flag to indicate if background fetch is currently running.
+    private boolean backgroundFetchServiceIsRunning;
+    
+    @Override
+    protected void startBackgroundFetchServiceImpl() {
+        if (backgroundFetchTask == null) {
+            throw new RuntimeException("Attempt to start background fetch service, but no BackgroundFetchTask is installed");
+        }
+        
+        // Since the iOS background fetch service only runs when the app is in the background,
+        // we will also fire up the default TimerTask implementation which runs while
+        // the app is in the foreground.
+        super.startBackgroundFetchServiceImpl();
+        
+        nativeInstance.startBackgroundFetchServiceWithInterval(backgroundFetchTask.getPreferredInterval());
+        backgroundFetchServiceIsRunning = true;
+    }
+
+    @Override
+    protected void stopBackgroundFetchServiceImpl() {
+        super.stopBackgroundFetchServiceImpl();
+        
+        // We also need to stop the service that is running in the foreground
+        nativeInstance.stopBackgroundFetchService();
+        backgroundFetchServiceIsRunning = false;
+    }
+
+    @Override
+    public boolean isBackgroundFetchServiceRunning() {
+        if (getBackgroundFetchSupport() != Display.BACKGROUND_FETCH_SUPPORT_BACKGROUND) {
+            // If this device doesn't support background fetch
+            // Either the system is older than iOS 7, or the required background
+            // mode wasn't included in the build hint.
+            // Just use default foreground fetching.
+            return super.isBackgroundFetchServiceRunning();
+        }
+        return backgroundFetchServiceIsRunning;
+    }
+    
+    
+    
+    
+    
+    
+    static void performBackgroundFetch() {
+        final BackgroundFetchTask t = instance.backgroundFetchTask;
+        if (t != null) {
+            Display.getInstance().scheduleBackgroundTask(new Runnable() {
+
+                @Override
+                public void run() {
+                    int result = t.performFetch();
+                    fireBackgroundFetchComplete(result);
+                }
+
+            });
+        }
+           
+    }
+    
+    static void fireBackgroundFetchComplete(int result) {
+        nativeInstance.fireBackgroundFetchComplete(result);
+    }
+
     
     /**
      * Indicates whether the application should handle the given URL, defaults to true

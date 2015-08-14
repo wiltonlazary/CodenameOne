@@ -543,4 +543,12 @@ public final class IOSNative {
 
     native void cancelAllLocalNotifications();
 
+    native void fireBackgroundFetchComplete(int result);
+
+    native void startBackgroundFetchServiceWithInterval(int preferredInterval) ;
+
+    native void stopBackgroundFetchService();
+
+    native int getBackgroundFetchSupport();
+
 }
