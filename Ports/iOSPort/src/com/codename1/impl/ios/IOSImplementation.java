@@ -22,6 +22,7 @@
  */
 package com.codename1.impl.ios;
 
+import com.codename1.background.BackgroundFetch;
 import com.codename1.codescan.CodeScanner;
 import com.codename1.codescan.ScanResult;
 import com.codename1.contacts.Address;
@@ -86,6 +87,7 @@ import com.codename1.notifications.LocalNotificationCallback;
 import com.codename1.payment.RestoreCallback;
 import com.codename1.ui.Container;
 import com.codename1.ui.Dialog;
+import com.codename1.ui.Graphics;
 import com.codename1.ui.geom.GeneralPath;
 import com.codename1.ui.Stroke;
 import com.codename1.ui.Transform;
@@ -93,6 +95,7 @@ import com.codename1.ui.geom.PathIterator;
 import com.codename1.ui.geom.Shape;
 import com.codename1.ui.plaf.Style;
 import com.codename1.ui.spinner.Picker;
+import com.codename1.util.Callback;
 import com.codename1.util.StringUtil;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -122,12 +125,14 @@ public class IOSImplementation extends CodenameOneImplementation {
     private static boolean minimized;
     private String userAgent;
     private TextureCache textureCache = new TextureCache();
+    private static boolean dropEvents;
     
     private NativePathRenderer globalPathRenderer;
     private NativePathStroker globalPathStroker;
     
     private boolean isActive=false;
     private final ArrayList<Runnable> onActiveListeners = new ArrayList<Runnable>();
+    private static BackgroundFetch backgroundFetchCallback;
     
     
     /**
@@ -316,7 +321,7 @@ public class IOSImplementation extends CodenameOneImplementation {
             return;
         }
         Form current = getCurrentForm();
-        if(nativeInstance.isAsyncEditMode() && current.isFormBottomPaddingEditingMode() && getRootPane(current).getUnselectedStyle().getPadding(Component.BOTTOM) > 0) {
+        if(nativeInstance.isAsyncEditMode() && current.isFormBottomPaddingEditingMode() && getRootPane(current).getUnselectedStyle().getPaddingBottom()> 0) {
             getRootPane(current).getUnselectedStyle().setPadding(Component.BOTTOM, 0);
             current.forceRevalidate();
         } 
@@ -362,7 +367,7 @@ public class IOSImplementation extends CodenameOneImplementation {
                         if(f == cmp.getComponentForm()) {
                             cmp.requestFocus();
                         }
-                        if(nativeInstance.isAsyncEditMode() && f.isFormBottomPaddingEditingMode() && getRootPane(f).getUnselectedStyle().getPadding(Component.BOTTOM) > 0) {
+                        if(nativeInstance.isAsyncEditMode() && f.isFormBottomPaddingEditingMode() && getRootPane(f).getUnselectedStyle().getPaddingBottom() > 0) {
                             getRootPane(f).getUnselectedStyle().setPadding(Component.BOTTOM, 0);
                             f.forceRevalidate();
                             return;
@@ -413,10 +418,10 @@ public class IOSImplementation extends CodenameOneImplementation {
             int y = cmp.getAbsoluteY() + cmp.getScrollY();
             int w = cmp.getWidth();
             int h = cmp.getHeight();
-            int pt = stl.getPadding(false, Component.TOP);
-            int pb = stl.getPadding(false, Component.BOTTOM);
-            int pl = stl.getPadding(rtl, Component.LEFT);
-            int pr = stl.getPadding(rtl, Component.RIGHT);
+            int pt = stl.getPaddingTop();
+            int pb = stl.getPaddingBottom();
+            int pl = stl.getPaddingLeft(rtl);
+            int pr = stl.getPaddingRight(rtl);
             if(cmp.isSingleLineTextArea()) {
                 switch(cmp.getVerticalAlignment()) {
                     case TextArea.CENTER:
@@ -722,10 +727,10 @@ public class IOSImplementation extends CodenameOneImplementation {
                     int y = cmp.getAbsoluteY() + cmp.getScrollY();
                     int w = cmp.getWidth();
                     int h = cmp.getHeight();
-                    int pt = stl.getPadding(false, Component.TOP);
-                    int pb = stl.getPadding(false, Component.BOTTOM);
-                    int pl = stl.getPadding(rtl, Component.LEFT);
-                    int pr = stl.getPadding(rtl, Component.RIGHT);
+                    int pt = stl.getPaddingTop();
+                    int pb = stl.getPaddingBottom();
+                    int pl = stl.getPaddingLeft(rtl);
+                    int pr = stl.getPaddingRight(rtl);
                     if(currentEditing != null && currentEditing.isSingleLineTextArea()) {
                         switch(currentEditing.getVerticalAlignment()) {
                             case TextArea.CENTER:
@@ -897,14 +902,23 @@ public class IOSImplementation extends CodenameOneImplementation {
     private final static int[] singleDimensionX = new int[1];
     private final static int[] singleDimensionY = new int[1];
     public static void pointerPressedCallback(int x, int y) {
+        if(dropEvents) {
+            return;
+        }
         singleDimensionX[0] = x; singleDimensionY[0] = y;
         instance.pointerPressed(singleDimensionX, singleDimensionY);
     }
     public static void pointerReleasedCallback(int x, int y) {
+        if(dropEvents) {
+            return;
+        }
         singleDimensionX[0] = x; singleDimensionY[0] = y;
         instance.pointerReleased(singleDimensionX, singleDimensionY);
     }
     public static void pointerDraggedCallback(int x, int y) {
+        if(dropEvents) {
+            return;
+        }
         singleDimensionX[0] = x; singleDimensionY[0] = y;
         instance.pointerDragged(singleDimensionX, singleDimensionY);
     }
@@ -918,6 +932,9 @@ public class IOSImplementation extends CodenameOneImplementation {
     }
 
     protected void pointerDragged(final int[] x, final int[] y) {
+        if(dropEvents) {
+            return;
+        }
         super.pointerDragged(x, y);
     }
 
@@ -941,6 +958,12 @@ public class IOSImplementation extends CodenameOneImplementation {
             offset = 0;
         }
         NativeImage nimg = (NativeImage)nativeImage;
+        if(nimg.scaled) {
+            Object mute = createMutableImage(nimg.width, nimg.height, 0);
+            Object graph = getNativeGraphics(mute);
+            drawImage(graph, nimg, 0, 0);
+            nimg = (NativeImage)mute;
+        }
         imageRgbToIntArray(nimg.peer, arr, x, y, width, height, nimg.width, nimg.height);
     }
 
@@ -1126,6 +1149,7 @@ public class IOSImplementation extends CodenameOneImplementation {
     public Object scale(Object nativeImage, int width, int height) {
         NativeImage original = (NativeImage)nativeImage;
         NativeImage n = new NativeImage("Scaled image from peer: " + original.peer + " width " + width + " height " + height);
+        n.scaled = true;
         n.peer = original.peer;
         n.width = width;
         n.height = height;
@@ -1241,6 +1265,8 @@ public class IOSImplementation extends CodenameOneImplementation {
     }
     
     public void setClip(Object graphics, int x, int y, int width, int height) {
+        width = Math.max(0, width);
+        height = Math.max(0, height);
         NativeGraphics ng = ((NativeGraphics)graphics);
         ng.checkControl();
         ng.setClip(x, y, width, height);
@@ -1288,6 +1314,8 @@ public class IOSImplementation extends CodenameOneImplementation {
 
     
     public void clipRect(Object graphics, int x, int y, int width, int height) {
+        width = Math.max(0, width);
+        height = Math.max(0, height);
         NativeGraphics ng = (NativeGraphics)graphics;
         ng.checkControl();
         ng.clipRect(x, y, width, height);
@@ -1539,6 +1567,27 @@ public class IOSImplementation extends CodenameOneImplementation {
         ng.applyClip();
         ng.nativeFillArc(ng.color, ng.alpha, x, y, width, height, startAngle, arcAngle);
     }
+
+    @Override
+    public void fillRadialGradient(Object graphics, int startColor, int endColor, int x, int y, int width, int height, int startAngle, int arcAngle) {
+        NativeGraphics ng = (NativeGraphics)graphics;
+        ng.checkControl();
+        ng.applyTransform();
+        ng.applyClip();
+        Paint oldPaint = ng.paint;
+        ng.paint = new RadialGradient(startColor, endColor, x, y, width, height);
+        ng.applyPaint();
+        ng.nativeFillArc(ng.color, ng.alpha, x, y, width, height, startAngle, arcAngle);
+        ng.unapplyPaint();
+        ng.paint = oldPaint;
+    }
+
+    @Override
+    public void fillRadialGradient(Object graphics, int startColor, int endColor, int x, int y, int width, int height) {
+        fillRadialGradient(graphics, startColor, endColor, x, y, width, height, 0, 360); 
+    }
+    
+    
 
     private static void nativeFillArcMutable(int color, int alpha, int x, int y, int width, int height, int startAngle, int arcAngle) {
         nativeInstance.nativeFillArcMutable(color, alpha, x, y, width, height, startAngle, arcAngle);
@@ -2687,6 +2736,7 @@ public class IOSImplementation extends CodenameOneImplementation {
      * Callback for the native layer
      */
     public static void capturePictureResult(String r) {
+        dropEvents = false;
         if(captureCallback != null) {
             if(r != null) {
                 if(r.startsWith("file:")) {
@@ -2703,6 +2753,7 @@ public class IOSImplementation extends CodenameOneImplementation {
     
     
     public void captureAudio(ActionListener response) {
+        dropEvents = false;
         String p = FileSystemStorage.getInstance().getAppHomePath();
         if(!p.endsWith("/")) {
             p += "/";
@@ -2733,6 +2784,7 @@ public class IOSImplementation extends CodenameOneImplementation {
      * Callback for the native layer
      */
     public static void captureMovieResult(String r) {
+        dropEvents = false;
         capturePictureResult(r);
     }
     
@@ -2746,6 +2798,7 @@ public class IOSImplementation extends CodenameOneImplementation {
         captureCallback = new EventDispatcher();
         captureCallback.addListener(response);
         nativeInstance.captureCamera(false);
+        dropEvents = true;
     }
 
     @Override
@@ -2865,6 +2918,7 @@ public class IOSImplementation extends CodenameOneImplementation {
         captureCallback = new EventDispatcher();
         captureCallback.addListener(response);
         nativeInstance.captureCamera(true);
+        dropEvents = true;
     }
 
     @Override
@@ -2877,7 +2931,6 @@ public class IOSImplementation extends CodenameOneImplementation {
         captureCallback = new EventDispatcher();
         captureCallback.addListener(response);
         nativeInstance.openGallery(type);
-        
     }
     
     
@@ -3046,13 +3099,16 @@ public class IOSImplementation extends CodenameOneImplementation {
             if(moviePlayerPeer != 0) {
                 pause();
                 if(!isVideo) {
-                    nativeInstance.cleanupAudio(moviePlayerPeer);                    
+                    nativeInstance.cleanupAudio(moviePlayerPeer);
+                    moviePlayerPeer = 0;
                 }
                 removeMediaCallback(onCompletionCallbackId);
                 // SJH Nov. 13, 2015:  Uncommenting this because it seems that 
                 // we do need to release the peer when we're cleaning up.
-                nativeInstance.releasePeer(moviePlayerPeer);
-                moviePlayerPeer = 0;
+                if (isVideo) {
+                    nativeInstance.releasePeer(moviePlayerPeer);
+                    moviePlayerPeer = 0;
+                }
             }
         }
         
@@ -3529,8 +3585,30 @@ public class IOSImplementation extends CodenameOneImplementation {
         
     }
     
+    abstract class Paint {
+        
+    }
+    
+    abstract class Gradient extends Paint {
+        int startColor;
+        int endColor;
+    }
+    
+    class RadialGradient extends Gradient {
+        int x, y, width, height;
+        
+        RadialGradient(int startColor, int endColor, int x, int y, int width, int height) {
+            this.x = x;
+            this.y = y;
+            this.width = width;
+            this.height = height;
+            this.startColor = startColor;
+            this.endColor = endColor;
+        }
+    }
     
     class NativeGraphics {
+        Paint paint;
         final Rectangle reusableRect = new Rectangle();
         final Rectangle reusableRect2 = new Rectangle();
         NativeImage associatedImage;
@@ -3607,6 +3685,10 @@ public class IOSImplementation extends CodenameOneImplementation {
             if (transform == null || transform.isIdentity()) {
                 // Preliminary checks to see if clipping is unnecessary
                 clip.getBounds(reusableRect);
+                if (reusableRect.getWidth() <= 0 || reusableRect.getHeight() <= 0) {
+                    // The existing clip is null so we don't need to do anything here.
+                    return;
+                }
                 reusableRect2.setBounds(x, y, w, h);
                 
                 boolean clipIsRect = clip.isRect();
@@ -3618,7 +3700,9 @@ public class IOSImplementation extends CodenameOneImplementation {
                 if (!clipIsRect) {
                     reusableClipShape.setShape(clip, null);
                 }
-                clip.intersect(x, y, w, h);
+                if (!clip.intersect(x, y, w, h)) {
+                    clip.setBounds(0, 0, 0, 0);
+                }
                 if (!clipIsRect && clip.equals(reusableClipShape, null)) {
                     return;
                 }
@@ -3627,10 +3711,14 @@ public class IOSImplementation extends CodenameOneImplementation {
                 inverseClipDirty = true;
                 applyClip();
             } else {
-                GeneralPath inverseClip = inverseClip();
-                inverseClip.intersect(x, y, w, h);
                 reusableClipShape.setShape(clip, null);
-                clip.setShape(inverseClip, transform);
+            
+                GeneralPath inverseClip = inverseClip();
+                if (!inverseClip.intersect(x, y, w, h)) {
+                    clip.setBounds(0,0,0,0);
+                } else {
+                    clip.setShape(inverseClip, transform);
+                }
                 if (clip.equals(reusableClipShape, null)) {
                     return;
                 }
@@ -4070,9 +4158,35 @@ public class IOSImplementation extends CodenameOneImplementation {
         boolean isShapeClipSupported() {
             return true;
         }
+        
+        public void applyPaint() {
+            if (paint != null && paint instanceof RadialGradient) {
+                RadialGradient g = (RadialGradient)paint;
+                nativeInstance.applyRadialGradientPaintMutable(g.startColor, g.endColor, g.x, g.y, g.width, g.height);
+            }
+        }
+        
+        public void unapplyPaint() {
+            if (paint != null && paint instanceof RadialGradient) {
+                nativeInstance.clearRadialGradientPaintMutable();
+            }
+        }
     }
 
     class GlobalGraphics extends NativeGraphics {
+        public void applyPaint() {
+            if (paint != null && paint instanceof RadialGradient) {
+                RadialGradient g = (RadialGradient)paint;
+                nativeInstance.applyRadialGradientPaintGlobal(g.startColor, g.endColor, g.x, g.y, g.width, g.height);
+            }
+        }
+        
+        public void unapplyPaint() {
+            if (paint != null && paint instanceof RadialGradient) {
+                nativeInstance.clearRadialGradientPaintGlobal();
+            }
+        }
+        
         public void checkControl() {
             if(currentlyDrawingOn != this) {
                 if(currentlyDrawingOn != null) {
@@ -4279,7 +4393,14 @@ public class IOSImplementation extends CodenameOneImplementation {
                     p.getBounds(origBounds);
                     tmpDrawShape.setShape(shape, transform);
                     tmpDrawShape.getBounds(transformedBounds);
-                    float scale = Math.max(transformedBounds.getWidth()/(float)origBounds.getWidth(), transformedBounds.getHeight()/(float)origBounds.getHeight());
+                    
+                    double h1 = Math.sqrt(origBounds.getWidth() * origBounds.getWidth() + origBounds.getHeight() * origBounds.getHeight());
+                    double h2 = Math.sqrt(transformedBounds.getWidth() * transformedBounds.getWidth() + transformedBounds.getHeight() * transformedBounds.getHeight());
+                    if (h2 < 1) h2 = 1;
+                    if (h1 < 1) h1 = 1;
+                    
+                    
+                    float scale = (float)(h2/h1);
                     tmpTransform.setScale(scale, scale);
                     tmpDrawShape.setShape(shape, tmpTransform);
 
@@ -4306,6 +4427,14 @@ public class IOSImplementation extends CodenameOneImplementation {
                             return;
                         }
                         //mask = (TextureAlphaMask)createAlphaMask(shape, stroke);
+                        if (paint != null && paint instanceof RadialGradient) {
+                            RadialGradient rgp = (RadialGradient)paint;
+                            rgp.x *= scale;
+                            rgp.y *= scale;
+                            rgp.width *= scale;
+                            rgp.height *= scale;
+                            applyPaint();
+                        }
                         nativeDrawAlphaMask(mask);
                     } finally {
                         setTransform(tmpTransform2);
@@ -4411,6 +4540,7 @@ public class IOSImplementation extends CodenameOneImplementation {
     }
 
     class NativeImage {
+        boolean scaled;
         NativeGraphics child;
         int width;
         int height;
@@ -4890,6 +5020,11 @@ public class IOSImplementation extends CodenameOneImplementation {
     }
     
     @Override
+    public void openNativeNavigationApp(String location) {    
+        execute("http://maps.apple.com/?q=" + Util.encodeUrl(location));
+    }
+
+    @Override
     public void flashBacklight(int duration) {
         nativeInstance.flashBacklight(duration);
     }
@@ -5229,11 +5364,25 @@ public class IOSImplementation extends CodenameOneImplementation {
     public void refreshContacts() {
         nativeInstance.refreshContacts();
     }
-    
-    
-    
-    
 
+    @Override
+    public String[] getLinkedContactIds(Contact c) {
+        int recId = Integer.parseInt(c.getId());
+        int num = nativeInstance.countLinkedContacts(recId);
+        String[] out = new String[num];
+        if (num > 0) {
+            int[] iout = new int[num];
+            nativeInstance.getLinkedContactIds(num, recId, iout);
+            for (int i=0; i<num; i++) {
+                out[i] = String.valueOf(iout[i]);
+            }
+        }
+        return out;
+        
+    }
+    
+    
+    
     @Override
     public Contact getContactById(String id, boolean includesFullName, boolean includesPicture, boolean includesNumbers, boolean includesEmail, boolean includeAddress) {
         int recId = Integer.parseInt(id);
@@ -5512,9 +5661,85 @@ public class IOSImplementation extends CodenameOneImplementation {
     
     @Override
     public PeerComponent createNativePeer(Object nativeComponent) {
+        if(Display.getInstance().getProperty("ios.zpeer", null) != null) {
+            return new ZNativeIPhoneView(nativeComponent);
+        }
         return new NativeIPhoneView(nativeComponent);
     }
+
+    class ZNativeIPhoneView extends PeerComponent {
+        private long[] nativePeer;
+        private boolean lightweightMode; 
+       
+        public ZNativeIPhoneView(Object nativePeer) {
+            super(nativePeer);
+            this.nativePeer = (long[])nativePeer;
+            nativeInstance.retainPeer(this.nativePeer[0]);
+            nativeInstance.peerInitialized(this.nativePeer[0], getAbsoluteX(), getAbsoluteY(), getWidth(), getHeight());
+        }
         
+        public void finalize() {
+            if(nativePeer != null && nativePeer[0] != 0) {
+                nativeInstance.releasePeer(nativePeer[0]);            
+                nativePeer = null;
+            }
+        }
+        
+        public boolean isFocusable() {
+            return true;
+        }
+
+        public void setFocus(boolean b) {
+        }
+        
+        protected Dimension calcPreferredSize() {
+            if(nativePeer == null || nativePeer[0] == 0) {
+                return new Dimension();
+            }
+            int[] p = widthHeight;
+            nativeInstance.calcPreferredSize(nativePeer[0], getDisplayWidth(), getDisplayHeight(), p);
+            return new Dimension(p[0], p[1]);
+        }
+
+        
+        protected void setLightweightMode(boolean l) {
+            /*if(nativePeer != null && nativePeer[0] != 0) {
+                if(lightweightMode != l) {
+                    lightweightMode = l;
+                    nativeInstance.peerSetVisible(nativePeer[0], !lightweightMode);
+                    getComponentForm().repaint();
+                }
+            }*/
+        }
+        
+        protected Image generatePeerImage() {
+            int[] wh = widthHeight;
+            long imagePeer = nativeInstance.createPeerImage(this.nativePeer[0], wh);
+            if(imagePeer == 0) {
+                return null;
+            }
+            NativeImage ni = new NativeImage("PeerScreen");
+            ni.peer = imagePeer;
+            ni.width = wh[0];
+            ni.height = wh[1];
+            return Image.createImage(ni);
+        }
+
+        @Override
+        public void paint(Graphics g) {
+            if(nativePeer != null && nativePeer[0] != 0) {
+                nativeInstance.updatePeerPositionSize(nativePeer[0], getAbsoluteX(), getAbsoluteY(), getWidth(), getHeight());
+            }
+        }
+        
+        
+        
+        protected boolean shouldRenderPeerImage() {
+            return false;
+        }
+    }
+    
+    
     class NativeIPhoneView extends PeerComponent {
         private long[] nativePeer;
         private boolean lightweightMode; 
@@ -6320,6 +6545,16 @@ public class IOSImplementation extends CodenameOneImplementation {
         return roots;
     }
 
+    @Override
+    public boolean hasCachesDir() {
+        return true;
+    }
+
+    @Override
+    public String getCachesDir() {
+        return listFilesystemRoots()[1];
+    }
+
     /**
      * @inheritDoc
      */
@@ -6610,6 +6845,8 @@ public class IOSImplementation extends CodenameOneImplementation {
         }
     }
     
+    
+    
     public static void setMainClass(Object main) {
         if(main instanceof PushCallback) {
             pushCallback = (PushCallback)main;
@@ -6622,6 +6859,9 @@ public class IOSImplementation extends CodenameOneImplementation {
         }
         if (main instanceof LocalNotificationCallback) {
             setLocalNotificationCallback((LocalNotificationCallback) main);
+        }
+        if (main instanceof BackgroundFetch) {
+            backgroundFetchCallback = (BackgroundFetch)main;
         }
     }        
     
@@ -6882,6 +7122,14 @@ public class IOSImplementation extends CodenameOneImplementation {
     }
     
     
+    public static long beginBackgroundTask() {
+        return nativeInstance.beginBackgroundTask();
+    }
+    
+    public static void endBackgroundTask(long taskId) {
+        nativeInstance.endBackgroundTask(taskId);
+    }
+    
     /**
      * Use this method to release shared resources, save user data, invalidate 
      * timers, and store enough application state information to restore your 
@@ -6893,6 +7141,9 @@ public class IOSImplementation extends CodenameOneImplementation {
         minimized = true;
         if(instance.life != null) {
             instance.life.applicationDidEnterBackground();
+            if (instance.isEditingText()) {
+                foldKeyboard();
+            }
         }
     }
     /**
@@ -6925,6 +7176,52 @@ public class IOSImplementation extends CodenameOneImplementation {
         }
         
     }
+    
+    public static void performBackgroundFetch() {
+        
+        Display.getInstance().callSerially(new Runnable() {
+            public void run() {
+                // Note we have to check for backgroundFetchCallback inside this callSerially
+                // because it might not have been set yet if we call it outside.
+                if (backgroundFetchCallback != null) {
+                    backgroundFetchCallback.performBackgroundFetch(System.currentTimeMillis()+25*60*1000, new Callback<Boolean>() {
+
+                        @Override
+                        public void onSucess(Boolean value) {
+                            if (!value) {
+                                nativeInstance.fireUIBackgroundFetchResultNoData();
+                            } else {
+                                nativeInstance.fireUIBackgroundFetchResultNewData();
+                            }
+                        }
+
+                        @Override
+                        public void onError(Object sender, Throwable err, int errorCode, String errorMessage) {
+                            Log.e(err);
+                            nativeInstance.fireUIBackgroundFetchResultFailed();
+                        }
+                    });
+
+                }
+            }
+        });
+  
+    }
+
+    @Override
+    public void setPreferredBackgroundFetchInterval(int seconds) {
+        super.setPreferredBackgroundFetchInterval(seconds);
+        nativeInstance.setPreferredBackgroundFetchInterval(seconds);
+    }
+
+    @Override
+    public boolean isBackgroundFetchSupported() {
+        return nativeInstance.isBackgroundFetchSupported();
+    }
+    
+    
+    
+    
     
     /**
      * Calls the given runnable when the app is active.  If the app is already

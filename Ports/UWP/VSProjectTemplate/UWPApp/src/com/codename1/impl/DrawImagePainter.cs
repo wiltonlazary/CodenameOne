@@ -1,8 +1,4 @@
 ﻿using com.codename1.ui.geom;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace com.codename1.impl
 {
@@ -40,7 +36,7 @@ namespace com.codename1.impl
 
         public override void execute(WindowsGraphics underlying)
         {
-            underlying.setAlpha(0xff);
+            underlying.setAlpha(alpha);
             //underlying.setColor(0xff0000);
             if (w <= 0 || h <= 0)
             {

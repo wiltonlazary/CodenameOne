@@ -57,8 +57,6 @@ import java.util.ArrayList;
  * 
  * <img src="https://www.codenameone.com/img/developer-guide/components-infinitescrolladapter.png" alt="Sample usage of infinite scroll adapter" /><br><br>
  * 
- * <script src="https://gist.github.com/codenameone/22efe9e04e2b8986dfc3.js"></script>
- *
  * <p>
  * You can use adapters with masks using syntax similar to this to create a round image mask for a {@code URLImage}:
  * </p>
@@ -103,22 +101,24 @@ public class URLImage extends EncodedImage {
         public EncodedImage adaptImage(EncodedImage downloadedImage, EncodedImage placeholderImage) {
             if(downloadedImage.getWidth() != placeholderImage.getWidth() || downloadedImage.getHeight() != placeholderImage.getHeight()) {
                 Image tmp = downloadedImage.getInternal().scaledLargerRatio(placeholderImage.getWidth(), placeholderImage.getHeight());
+                Image i = Image.createImage(placeholderImage.getWidth(), placeholderImage.getHeight(), 0);
+                Graphics g = i.getGraphics();
                 if(tmp.getWidth() > placeholderImage.getWidth()) {
                     int diff = tmp.getWidth() - placeholderImage.getWidth();
                     int x = diff / 2;
-                    tmp = tmp.subImage(x, 0, 
-                            Math.min(placeholderImage.getWidth(), tmp.getWidth()), 
-                            Math.min(placeholderImage.getHeight(), tmp.getHeight()), true);
+                    g.drawImage(tmp, -x, 0);
+                    tmp = i;
                 } else {
                     if(tmp.getHeight() > placeholderImage.getHeight()) {
                         int diff = tmp.getHeight() - placeholderImage.getHeight();
                         int y = diff / 2;
-                        tmp = tmp.subImage(0, y, Math.min(placeholderImage.getWidth(), tmp.getWidth()), 
-                                Math.min(placeholderImage.getHeight(), tmp.getHeight()), true);
+                        g.drawImage(tmp, 0, -y);
+                        tmp = i;
                     }
                 }
                 tmp = postProcess(tmp);
-                return EncodedImage.createFromImage(tmp, tmp.isOpaque());
+                //return EncodedImage.createFromImage(tmp, tmp.isOpaque());
+                return EncodedImage.createFromImage(tmp, false);
             }
             return downloadedImage;
         }
@@ -128,7 +128,7 @@ public class URLImage extends EncodedImage {
         }
         
         public boolean isAsyncAdapter() {
-            return true;
+            return false;
         }        
     }
     
@@ -239,7 +239,9 @@ public class URLImage extends EncodedImage {
     /**
      * Images are normally fetched from storage or network only as needed, 
      * however if the download must start before the image is drawn this method
-     * can be invoked.
+     * can be invoked. Notice that "immediately" doesn't mean synchronously, it just
+     * means that the image will be added to the queue right away but probably won't be
+     * available by the time the method completes.
      */
     public void fetch() {
         if(fetching || imageData != null) {
@@ -250,7 +252,7 @@ public class URLImage extends EncodedImage {
             locked = super.isLocked();
             if(storageFile != null) {
                 if(Storage.getInstance().exists(storageFile)) {
-                    unlock();
+                    super.unlock();
                     imageData = new byte[Storage.getInstance().entrySize(storageFile)];
                     InputStream is = Storage.getInstance().createInputStream(storageFile);
                     Util.readFully(is, imageData);
@@ -266,7 +268,7 @@ public class URLImage extends EncodedImage {
                 }
             } else {
                 if(FileSystemStorage.getInstance().exists(fileSystemFile)) {
-                    unlock();
+                    super.unlock();
                     imageData = new byte[(int)FileSystemStorage.getInstance().getLength(fileSystemFile)];
                     InputStream is = FileSystemStorage.getInstance().openInputStream(fileSystemFile);
                     Util.readFully(is, imageData);
@@ -314,7 +316,7 @@ public class URLImage extends EncodedImage {
         if(repaintImage) {
             repaintImage = false;
             if(locked) {
-                lock();
+                super.lock();
                 locked = false;
             }
             return true;
@@ -322,6 +324,23 @@ public class URLImage extends EncodedImage {
         return false;
     }
 
+    /**
+     * Block this method from external callers as it might break the functionality
+     */
+    @Override
+    public void lock() {
+    }
+
+    /**
+     * Block this method from external callers as it might break the functionality
+     */
+    @Override
+    public void unlock() {
+    }
+
+
+    
+    
     /**
      * {@inheritDoc}
      */

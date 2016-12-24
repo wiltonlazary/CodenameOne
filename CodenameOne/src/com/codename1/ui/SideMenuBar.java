@@ -220,7 +220,13 @@ public class SideMenuBar extends MenuBar {
         if (i != null) {
             ob.setIcon(i);
         } else {
-            FontImage.setMaterialIcon(ob, FontImage.MATERIAL_MENU, 4.5f);
+            float size = 4.5f;
+            try {
+                size = Float.parseFloat(uim.getThemeConstant("menuImageSize", "4.5"));
+            } catch(Throwable t) {
+                t.printStackTrace();
+            }
+            FontImage.setMaterialIcon(ob, FontImage.MATERIAL_MENU, size);
         }
         Image p = (Image) uim.getThemeImageConstant("sideMenuPressImage");
         if (p != null) {
@@ -276,7 +282,7 @@ public class SideMenuBar extends MenuBar {
                     if (rightSideSwipePotential && (hasSideMenus[1] || (hasSideMenus[0] && isRTL()))) {
                         final int x = evt.getX();
                         final int y = evt.getY();
-                        if (Math.abs(y - initialDragY) > initialDragX - x) {
+                        if (x < 0 || Math.abs(y - initialDragY) > initialDragX - x) {
                             rightSideSwipePotential = false;
                             return;
                         }
@@ -772,10 +778,18 @@ public class SideMenuBar extends MenuBar {
             titleArea.addComponent(BorderLayout.CENTER, l);
             installRightCommands();
             installLeftCommands();
-            if(parent.getUIManager().isThemeConstant("leftAlignSideMenuBool", false)) {
-                ((BorderLayout) titleArea.getLayout()).setCenterBehavior(BorderLayout.CENTER_BEHAVIOR_SCALE);
+            if(parent.getToolbar() != null) {
+                if(parent.getToolbar().isTitleCentered()) {
+                    ((BorderLayout) titleArea.getLayout()).setCenterBehavior(BorderLayout.CENTER_BEHAVIOR_CENTER_ABSOLUTE);                
+                } else {
+                    ((BorderLayout) titleArea.getLayout()).setCenterBehavior(BorderLayout.CENTER_BEHAVIOR_SCALE);
+                }
             } else {
-                ((BorderLayout) titleArea.getLayout()).setCenterBehavior(BorderLayout.CENTER_BEHAVIOR_CENTER_ABSOLUTE);                
+                if(parent.getUIManager().isThemeConstant("leftAlignSideMenuBool", false)) {
+                    ((BorderLayout) titleArea.getLayout()).setCenterBehavior(BorderLayout.CENTER_BEHAVIOR_SCALE);
+                } else {
+                    ((BorderLayout) titleArea.getLayout()).setCenterBehavior(BorderLayout.CENTER_BEHAVIOR_CENTER_ABSOLUTE);                
+                }
             }
         }
         if (cmd != null) {
@@ -1137,7 +1151,7 @@ public class SideMenuBar extends MenuBar {
 
             protected void sizeChanged(int w, int h) {
                 Style formStyle = getStyle();
-                int width = w - (formStyle.getMargin(isRTL(), Component.LEFT) + formStyle.getMargin(isRTL(), Component.RIGHT));
+                int width = w - (formStyle.getHorizontalMargins());
                 
                 parent.sizeChangedInternal(w, h);
                 //if the size changed event came from a keyboard open/close don't 
@@ -1281,6 +1295,7 @@ public class SideMenuBar extends MenuBar {
                 }
                 super.keyReleased(keyCode);
             }
+
         };
 
         m.setScrollable(false);
@@ -1659,6 +1674,9 @@ public class SideMenuBar extends MenuBar {
 
         public CommandWrapper(Command cmd) {
             super(cmd.getCommandName(), cmd.getIcon(), cmd.getId());
+            super.setPressedIcon(cmd.getPressedIcon());
+            super.setRolloverIcon(cmd.getRolloverIcon());
+            super.setDisabledIcon(cmd.getDisabledIcon());
             this.cmd = cmd;
         }
 
@@ -1746,8 +1764,7 @@ public class SideMenuBar extends MenuBar {
             closeMenu();
             clean();
             parent.addShowListener(pointerDragged);
-            new Thread(new ShowWaiter()).start();
-
+            Display.getInstance().startThread(new ShowWaiter(), "Show Waiter").start();
         }
     }
 
